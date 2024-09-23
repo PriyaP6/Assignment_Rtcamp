@@ -1,0 +1,19 @@
+const { test, expect } = require('@playwright/test');
+
+test('Verify Z-A sorting order on All Items page', async ({ page }) => {
+  // Navigate to the All Items page
+  await page.goto('YOUR_APP_URL/all-items');
+
+  // Select Z-A sorting option
+  await page.selectOption('select#sorting-option', 'z-a');
+
+  // Wait for the page to update
+  await page.waitForTimeout(1000);
+
+  // Get the text content of all item names
+  const itemNames = await page.$$eval('.item-name', (elements) => elements.map((element) => element.textContent));
+
+  // Verify the sorting order
+  const sortedItemNames = [...itemNames].sort((a, b) => b.localeCompare(a));
+  expect(itemNames).toEqual(sortedItemNames);
+});
