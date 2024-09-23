@@ -1,0 +1,25 @@
+
+
+const { test, expect } = require('@playwright/test');
+
+test('Verify price order (high-low) on All Items page', async ({ page }) => {
+  // Navigate to the All Items page
+  await page.goto('YOUR_APP_URL/all-items');
+
+  // Select high-low sorting option
+  await page.selectOption('select#sorting-option', 'high-low');
+
+  // Wait for the page to update
+  await page.waitForTimeout(1000);
+
+  // Get the text content of all item prices
+  const itemPrices = await page.$$eval('.item-price', (elements) => 
+    elements.map((element) => 
+      parseFloat(element.textContent.replace(/[^\d\.]/g, '')) // Remove currency symbols and convert to float
+    )
+  );
+
+  // Verify the price order (high-low)
+  const sortedItemPrices = [...itemPrices].sort((a, b) => b - a);
+  expect(itemPrices).toEqual(sortedItemPrices);
+});
