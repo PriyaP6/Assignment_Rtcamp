@@ -1,0 +1,53 @@
+const { test, expect } = require('@playwright/test');
+
+test('Validate checkout journey with multiple items', async ({ page }) => {
+  // Navigate to the All Items page
+  await page.goto('YOUR_APP_URL/all-items');
+
+  // Add multiple items to cart
+  for (let i = 0; i < 3; i++) {
+    await page.click('.item-card:nth-child(' + (i + 1) + ') .add-to-cart-button');
+    await page.waitForTimeout(500); // Wait for cart update
+  }
+
+  // Proceed to checkout
+  await page.click('text="Checkout"');
+
+  // Verify cart contents
+  const cartItems = await page.$$eval('.cart-item', (elements) =>
+    elements.map((element) => element.textContent)
+  );
+  expect(cartItems.length).toBe(3);
+
+  // Verify subtotal, tax, and total
+  const subtotal = await page.$eval('.subtotal', (element) => element.textContent);
+  const tax = await page.$eval('.tax', (element) => element.textContent);
+  const total = await page.$eval('.total', (element) => element.textContent);
+  expect(parseFloat(subtotal.replace(/[^\d\.]/g, ''))).toBeGreaterThan(0);
+  expect(parseFloat(tax.replace(/[^\d\.]/g, ''))).toBeGreaterThan(0);
+  expect(parseFloat(total.replace(/[^\d\.]/g, ''))).toBeGreaterThan(0);
+
+  // Fill out shipping information
+  await page.fill('input[name="shippingFirstName"]', 'John');
+  await page.fill('input[name="shippingLastName"]', 'Doe');
+  await page.fill('input[name="shippingAddress"]', '123 Main St');
+  await page.fill('input[name="shippingCity"]', 'Anytown');
+  await page.fill('input[name="shippingState"]', 'CA');
+  await page.fill('input[name="shippingZip"]', '12345');
+
+  // Continue to payment
+  await page.click('text="Continue to Payment"');
+
+  // Fill out payment information (e.g., card details)
+  await page.fill('input[name="cardNumber"]', '4242424242424242');
+  await page.fill('input[name="expMonth"]', '12');
+  await page.fill('input[name="expYear"]', '2030');
+  await page.fill('input[name="cvc"]', '123');
+
+  // Place order
+  await page.click('text="Place Order"');
+
+  // Verify order confirmation
+  await page.waitForSelector('.order-confirmation');
+  expect(await page.$eval('.order-confirmation', (element) => element.textContent)).toContain('Order placed successfully');
+});
